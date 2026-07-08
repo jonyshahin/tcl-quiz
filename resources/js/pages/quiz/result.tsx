@@ -168,7 +168,7 @@ export default function Result({
                                     <TclLogo className="h-4 w-auto" />
                                 </div>
                                 <h2 className="font-display text-[clamp(1rem,3vw,1.3rem)] font-bold">
-                                    Get in touch
+                                    Be one of our winner
                                 </h2>
                             </div>
 
