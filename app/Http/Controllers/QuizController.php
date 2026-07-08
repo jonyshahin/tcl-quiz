@@ -60,13 +60,13 @@ class QuizController extends Controller
         $answers = $attempt->answers ?? [];
         $stored = $answers[(string) $question->id] ?? null;
 
+        // Only a correctly-answered question is locked; a lingering wrong pick
+        // is treated as unanswered so the player can keep trying.
         $answeredResult = null;
-        if ($stored !== null) {
-            $correctOption = $question->answerOptions->firstWhere('is_correct', true);
+        if ($stored !== null && ($stored['is_correct'] ?? false) === true) {
             $answeredResult = [
                 'selected_option_id' => (int) $stored['selected_option_id'],
-                'correct_option_id' => (int) ($correctOption?->id ?? 0),
-                'is_correct' => (bool) $stored['is_correct'],
+                'is_correct' => true,
                 'explanation' => $question->explanation,
             ];
         }

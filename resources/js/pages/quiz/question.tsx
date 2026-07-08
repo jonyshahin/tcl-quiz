@@ -17,9 +17,9 @@ interface Option {
 
 interface AnswerResult {
     selected_option_id: number;
-    correct_option_id: number;
     is_correct: boolean;
     explanation: string | null;
+    locked: boolean;
 }
 
 interface Props {
@@ -32,7 +32,7 @@ interface Props {
         prompt: string;
         options: Option[];
     };
-    answeredResult: AnswerResult | null;
+    answeredResult: { selected_option_id: number; explanation: string | null } | null;
 }
 
 export default function Question({
@@ -44,13 +44,22 @@ export default function Question({
     answeredResult,
 }: Props) {
     const reduce = useReducedMotion();
-    const [result, setResult] = useState<AnswerResult | null>(answeredResult);
+
+    // A question locks only once the correct option is chosen.
+    const [lockedId, setLockedId] = useState<number | null>(
+        answeredResult?.selected_option_id ?? null,
+    );
+    const [explanation, setExplanation] = useState<string | null>(
+        answeredResult?.explanation ?? null,
+    );
+    const [wrongId, setWrongId] = useState<number | null>(null);
+    const [shakeNonce, setShakeNonce] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [leaving, setLeaving] = useState(false);
     const [focusIndex, setFocusIndex] = useState(0);
     const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-    const answered = result !== null;
+    const answered = lockedId !== null;
 
     const nextUrl = isLast
         ? `/quiz/${token}/result`
@@ -58,57 +67,60 @@ export default function Question({
 
     const select = async (option: Option) => {
         if (answered || submitting) {
-return;
-}
+            return;
+        }
 
         setSubmitting(true);
 
         try {
-            const data = await postJson<
-                AnswerResult & { already_answered: boolean }
-            >(`/quiz/${token}/answer`, {
+            const data = await postJson<AnswerResult>(`/quiz/${token}/answer`, {
                 question_id: question.id,
                 option_id: option.id,
             });
-            setResult({
-                selected_option_id: data.selected_option_id,
-                correct_option_id: data.correct_option_id,
-                is_correct: data.is_correct,
-                explanation: data.explanation,
-            });
+
+            if (data.is_correct) {
+                setLockedId(option.id);
+                setExplanation(data.explanation);
+                setWrongId(null);
+            } else {
+                // Warn with a shake, then let the player try again.
+                setWrongId(option.id);
+                setShakeNonce((n) => n + 1);
+                window.setTimeout(() => {
+                    setWrongId((cur) => (cur === option.id ? null : cur));
+                }, 750);
+            }
         } catch {
+            // Swallow — the player can simply pick again.
+        } finally {
             setSubmitting(false);
         }
     };
 
     const goNext = () => {
         if (!answered) {
-return;
-}
+            return;
+        }
 
         setLeaving(true);
     };
 
     const statusFor = (option: Option): OptionStatus => {
-        if (!result) {
-return 'idle';
-}
+        if (answered) {
+            return option.id === lockedId ? 'correct' : 'muted';
+        }
 
-        if (option.id === result.correct_option_id) {
-return 'correct';
-}
+        if (option.id === wrongId) {
+            return 'wrong';
+        }
 
-        if (option.id === result.selected_option_id) {
-return 'wrong';
-}
-
-        return 'muted';
+        return 'idle';
     };
 
     const onKeyDown = (e: React.KeyboardEvent) => {
         if (answered) {
-return;
-}
+            return;
+        }
 
         const count = question.options.length;
 
@@ -159,9 +171,7 @@ return;
                             key={index}
                             initial={enter.initial}
                             animate={enter.animate}
-                            exit={
-                                reduce ? { opacity: 0 } : { opacity: 0, x: -60 }
-                            }
+                            exit={reduce ? { opacity: 0 } : { opacity: 0, x: -60 }}
                             transition={{ duration: 0.4, ease: 'easeInOut' }}
                             className="grid grid-cols-1 gap-x-[clamp(1rem,4vw,2.5rem)] gap-y-[clamp(0.7rem,2.2vh,1.3rem)] md:grid-cols-2 md:items-center landscape:grid-cols-2 landscape:items-center"
                         >
@@ -181,26 +191,23 @@ return;
                                             key={option.id}
                                             ref={(el) => {
                                                 buttonRefs.current[i] =
-                                                    el?.querySelector(
-                                                        'button',
-                                                    ) ?? null;
+                                                    el?.querySelector('button') ??
+                                                    null;
                                             }}
                                         >
                                             <OptionCard
                                                 label={option.label}
                                                 text={option.text}
                                                 status={statusFor(option)}
-                                                answered={answered}
-                                                selected={
-                                                    result?.selected_option_id ===
-                                                    option.id
-                                                }
-                                                disabled={
-                                                    answered || submitting
-                                                }
+                                                selected={lockedId === option.id}
+                                                disabled={answered || submitting}
                                                 focusable={
-                                                    !answered &&
-                                                    focusIndex === i
+                                                    !answered && focusIndex === i
+                                                }
+                                                shakeKey={
+                                                    wrongId === option.id
+                                                        ? shakeNonce
+                                                        : 0
                                                 }
                                                 onSelect={() => select(option)}
                                             />
@@ -208,17 +215,20 @@ return;
                                     ))}
                                 </div>
 
+                                {!answered && (
+                                    <p className="text-[clamp(0.78rem,2.3vw,0.92rem)] font-medium text-tcl-white/75">
+                                        Pick the correct answer to continue.
+                                    </p>
+                                )}
+
                                 <AnimatePresence>
-                                    {answered && result?.explanation && (
+                                    {answered && explanation && (
                                         <motion.p
                                             initial={{ opacity: 0, height: 0 }}
-                                            animate={{
-                                                opacity: 1,
-                                                height: 'auto',
-                                            }}
+                                            animate={{ opacity: 1, height: 'auto' }}
                                             className="rounded-xl bg-tcl-white/15 px-4 py-3 text-[clamp(0.82rem,2.4vw,0.98rem)] text-tcl-white/90"
                                         >
-                                            {result.explanation}
+                                            {explanation}
                                         </motion.p>
                                     )}
                                 </AnimatePresence>
@@ -229,9 +239,7 @@ return;
                                         onClick={goNext}
                                         disabled={!answered}
                                         initial={false}
-                                        animate={{
-                                            opacity: answered ? 1 : 0.35,
-                                        }}
+                                        animate={{ opacity: answered ? 1 : 0.35 }}
                                         whileHover={
                                             !answered || reduce
                                                 ? undefined

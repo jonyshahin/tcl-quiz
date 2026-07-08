@@ -100,7 +100,7 @@ it('computes the score server-side and cannot be spoofed by the client payload',
     expect($attempt->is_winner)->toBeFalse();
 });
 
-it('locks an answer so it cannot be changed once recorded', function () {
+it('locks a question once it is answered correctly', function () {
     $question = makeQuestions(1, correctIndex: 0)->first();
     $attempt = app(QuizService::class)->startAttempt();
 
@@ -109,15 +109,37 @@ it('locks an answer so it cannot be changed once recorded', function () {
 
     $this->postJson(route('quiz.answer', $attempt->session_token), [
         'question_id' => $question->id, 'option_id' => $correct->id,
-    ])->assertJson(['is_correct' => true]);
+    ])->assertJson(['is_correct' => true, 'locked' => true]);
 
-    // A second, different answer for the same question returns the original result.
+    // Once correct, the question is locked — a later wrong pick can't change it.
     $this->postJson(route('quiz.answer', $attempt->session_token), [
         'question_id' => $question->id, 'option_id' => $wrong->id,
-    ])->assertJson(['is_correct' => true, 'already_answered' => true]);
+    ])->assertJson(['is_correct' => true, 'locked' => true]);
 
     $attempt->refresh();
     expect($attempt->correct_count)->toBe(1);
+});
+
+it('lets a wrong answer be retried until correct without locking', function () {
+    $question = makeQuestions(1, correctIndex: 0)->first();
+    $attempt = app(QuizService::class)->startAttempt();
+
+    $correct = $question->answerOptions->firstWhere('is_correct', true);
+    $wrong = $question->answerOptions->firstWhere('is_correct', false);
+
+    // A wrong pick is reported wrong and does not lock the question.
+    $this->postJson(route('quiz.answer', $attempt->session_token), [
+        'question_id' => $question->id, 'option_id' => $wrong->id,
+    ])->assertJson(['is_correct' => false, 'locked' => false]);
+
+    expect($attempt->fresh()->correct_count)->toBe(0);
+
+    // Retrying with the correct option now succeeds and locks.
+    $this->postJson(route('quiz.answer', $attempt->session_token), [
+        'question_id' => $question->id, 'option_id' => $correct->id,
+    ])->assertJson(['is_correct' => true, 'locked' => true]);
+
+    expect($attempt->fresh()->correct_count)->toBe(1);
 });
 
 it('rejects an option that does not belong to the question', function () {

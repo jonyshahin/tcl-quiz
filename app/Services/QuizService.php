@@ -47,29 +47,27 @@ class QuizService
 
     /**
      * Record an answer for a question against an attempt. Scoring is authoritative
-     * and server-side: the client only sends which option it picked. Answers lock —
-     * once a question is answered, the stored result is returned unchanged.
+     * and server-side: the client only sends which option it picked.
      *
-     * @return array{question_id: int, selected_option_id: int, correct_option_id: int, is_correct: bool, explanation: ?string, already_answered: bool}
+     * A question locks only once it is answered correctly — the player retries
+     * wrong picks until they choose the right option. Wrong picks overwrite any
+     * previous wrong attempt and never lock the question.
+     *
+     * @return array{question_id: int, selected_option_id: int, is_correct: bool, explanation: ?string, locked: bool}
      */
     public function recordAnswer(QuizAttempt $attempt, Question $question, AnswerOption $selected): array
     {
-        $correctOption = $question->answerOptions->firstWhere('is_correct', true);
-        $correctOptionId = (int) ($correctOption?->id ?? 0);
-
         $answers = $attempt->answers ?? [];
         $key = (string) $question->id;
 
-        if (array_key_exists($key, $answers)) {
-            $stored = $answers[$key];
-
+        // Already answered correctly — the question is locked; return that result.
+        if (isset($answers[$key]) && ($answers[$key]['is_correct'] ?? false) === true) {
             return [
                 'question_id' => $question->id,
-                'selected_option_id' => (int) $stored['selected_option_id'],
-                'correct_option_id' => $correctOptionId,
-                'is_correct' => (bool) $stored['is_correct'],
+                'selected_option_id' => (int) $answers[$key]['selected_option_id'],
+                'is_correct' => true,
                 'explanation' => $question->explanation,
-                'already_answered' => true,
+                'locked' => true,
             ];
         }
 
@@ -87,10 +85,9 @@ class QuizService
         return [
             'question_id' => $question->id,
             'selected_option_id' => $selected->id,
-            'correct_option_id' => $correctOptionId,
             'is_correct' => $isCorrect,
-            'explanation' => $question->explanation,
-            'already_answered' => false,
+            'explanation' => $isCorrect ? $question->explanation : null,
+            'locked' => $isCorrect,
         ];
     }
 
