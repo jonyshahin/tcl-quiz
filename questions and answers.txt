@@ -1,0 +1,17 @@
+What is the key advantage of the CAN bus communication protocol used in TCL VRF compared to traditional systems?
+
+A) 10 times faster and non-polar (not affected by reversing + and - wires)
+B) Functions completely wirelessly without any cables
+C) Requires complex fiber optic cabling
+D) Needs a daily manual reboot
+
+A) 10 times faster and non-polar (not affected by reversing + and - wires)
+
+What is the ultra-wide outdoor operating temperature range for the TCL VRF system during cooling?
+
+A) From 0°C to 40°C only
+B) From -5°C to 56°C
+C) From 20°C to 45°C
+D) It stops working above 48°C
+
+B) From -5°C to 56°C
