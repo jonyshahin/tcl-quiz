@@ -8,7 +8,7 @@ import type { BreadcrumbItem } from '@/types';
 interface LeadRow {
     id: number;
     name: string;
-    email: string;
+    email: string | null;
     phone: string | null;
     is_winner: boolean;
     score: string;
@@ -70,12 +70,18 @@ export default function Index({ leads }: Props) {
                                             {lead.name}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <a
-                                                href={`mailto:${lead.email}`}
-                                                className="text-tcl-red hover:underline"
-                                            >
-                                                {lead.email}
-                                            </a>
+                                            {lead.email ? (
+                                                <a
+                                                    href={`mailto:${lead.email}`}
+                                                    className="text-tcl-red hover:underline"
+                                                >
+                                                    {lead.email}
+                                                </a>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-muted-foreground">
                                             {lead.phone ?? '—'}

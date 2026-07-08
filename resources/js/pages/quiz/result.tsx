@@ -50,7 +50,6 @@ export default function Result({
     const firedRef = useRef(false);
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        email: '',
         phone: '',
     });
 
@@ -168,7 +167,7 @@ export default function Result({
                                     <TclLogo className="h-4 w-auto" />
                                 </div>
                                 <h2 className="font-display text-[clamp(1rem,3vw,1.3rem)] font-bold">
-                                    Be one of our winner
+                                    Be one of our winners
                                 </h2>
                             </div>
 
@@ -179,15 +178,6 @@ export default function Result({
                                 onChange={(v) => setData('name', v)}
                                 error={errors.name}
                                 autoComplete="name"
-                            />
-                            <Field
-                                label="Email"
-                                type="email"
-                                required
-                                value={data.email}
-                                onChange={(v) => setData('email', v)}
-                                error={errors.email}
-                                autoComplete="email"
                             />
                             <Field
                                 label="Phone (optional)"

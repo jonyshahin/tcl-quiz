@@ -14,7 +14,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('quiz_attempt_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
-            $table->string('email');
+            $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->boolean('is_winner')->default(false);
             $table->string('score');
