@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\QuestionController as AdminQuestionController;
+use App\Http\Controllers\DrawController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\QuizController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,18 @@ Route::get('/quiz/{attempt:session_token}/result', [QuizController::class, 'resu
 
 Route::post('/quiz/{attempt:session_token}/lead', [LeadController::class, 'store'])
     ->name('quiz.lead');
+
+/*
+|--------------------------------------------------------------------------
+| Public Lucky Draw (big-screen live-event page)
+|--------------------------------------------------------------------------
+*/
+Route::get('/draw', [DrawController::class, 'index'])->name('draw.index');
+
+Route::middleware('throttle:60,1')->group(function () {
+    Route::post('/draw/start', [DrawController::class, 'start'])->name('draw.start');
+    Route::post('/draw/{draw}/pick', [DrawController::class, 'pick'])->name('draw.pick');
+});
 
 /*
 |--------------------------------------------------------------------------

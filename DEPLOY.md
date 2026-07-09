@@ -102,9 +102,21 @@ and re‑run the seeder — or just manage questions in the admin panel at `/adm
 - **Inertia SSR** — if you enable SSR, change the build to `npm run build:ssr`
   and start the SSR server per Cloud's Inertia SSR guidance. Left off by default.
 
+## Public routes inventory
+
+- `/` — quiz start · `/quiz/*` — quiz flow · `/quiz/{token}/result` — results + lead form
+- **`/draw` — public Lucky Draw big‑screen page** (no auth; write routes
+  `POST /draw/start`, `POST /draw/{draw}/pick` are `throttle:60,1`)
+
+No new env vars, resources, or seeders are required for the Lucky Draw — the two
+new migrations (`draws`, `draw_winners`) run automatically via the existing
+`php artisan migrate --force` deploy command.
+
 ## Post‑deploy smoke check
 
 1. Open `APP_URL` → the branded start screen loads (no scrollbars).
 2. Play through: pick answers → winner/loser screen → submit the lead form.
 3. Sign in at `/login` with the admin account → `/admin/questions` and
    `/admin/leads` load; **Export CSV** downloads the leads.
+4. Open **`/draw`** (or **Open Lucky Draw** from `/admin/leads`) → press the
+   button to reveal 3 winners with masked phones; **Draw again** resets the stage.

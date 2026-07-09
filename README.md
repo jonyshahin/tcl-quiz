@@ -92,6 +92,30 @@ picked; correctness, `correct_count` and `is_winner` are computed on the server
 and cannot be spoofed by the request payload. `is_winner` is true only when every
 question is answered correctly.
 
+## Lucky Draw (`/draw`)
+
+**`/draw` is a public, full‑screen "big‑screen" page** for live events — open it on
+a projector/laptop and press the button to reveal **3 random winners** from
+everyone who submitted the contact form (the `leads` table), one at a time, with a
+decelerating name‑roulette, per‑reveal confetti, and a finale. The host can
+**Draw again** at any time to start a fresh, persisted draw.
+
+| Route | Purpose |
+|---|---|
+| `GET /draw` | The big‑screen page (names‑only reel, eligible count) |
+| `POST /draw/start` | Creates a new `draws` row, returns its id (throttled) |
+| `POST /draw/{draw}/pick` | Server‑picks the next winner, persists it (throttled) |
+
+- **Server‑authoritative selection.** The client never chooses a winner — the
+  reel just visually lands on the server's answer. Winners are always distinct
+  within a draw (enforced by unique DB indexes).
+- **Privacy.** The public page shows participant **names** (in the reel) and a
+  **masked phone** (e.g. `0770•••••89`) for the 3 drawn winners only. Full phone
+  numbers and emails are never exposed on the page or its JSON endpoints.
+- **Auditable.** Every draw and its winners are saved (`draws` / `draw_winners`).
+- The write routes are `throttle:60,1` (public, and they write rows).
+- Launch it from **`/admin/leads`** → **Open Lucky Draw**.
+
 ## Data model
 
 - `questions` — `prompt`, `explanation?`, `order`, `is_active`
@@ -99,6 +123,9 @@ question is answered correctly.
 - `quiz_attempts` — `session_token` (uuid), `total_questions`, `correct_count`,
   `is_winner`, `answers` (json), `completed_at`
 - `leads` — `quiz_attempt_id?`, `name`, `email`, `phone?`, `is_winner`, `score`
+- `draws` — `note?`, `eligible_count` (pool snapshot at draw time)
+- `draw_winners` — `draw_id`, `lead_id`, `position` (1–3); unique per
+  `(draw, position)` and `(draw, lead)`
 
 ## Tests
 

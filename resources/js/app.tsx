@@ -21,7 +21,8 @@ createInertiaApp({
         switch (true) {
             case name === 'welcome':
             case name.startsWith('quiz/'):
-                // Public quiz screens render their own full-screen stage.
+            case name.startsWith('draw/'):
+                // Public quiz + draw screens render their own full-screen stage.
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

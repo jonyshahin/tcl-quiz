@@ -46,4 +46,36 @@ class Lead extends Model
     {
         return $this->belongsTo(QuizAttempt::class);
     }
+
+    /**
+     * A privacy-safe rendering of the phone number for the public draw screen.
+     *
+     * Keeps the first 4 and last 2 characters and replaces the middle with
+     * bullets (e.g. `07701234589` → `0770•••••89`). Very short numbers keep only
+     * the last 2 characters. Returns null when no phone is on file.
+     */
+    public function maskedPhone(): ?string
+    {
+        $phone = trim((string) ($this->phone ?? ''));
+
+        if ($phone === '') {
+            return null;
+        }
+
+        $length = mb_strlen($phone);
+
+        // Too short to keep a 4-char prefix: mask all but the last 2 characters.
+        if ($length <= 6) {
+            $visible = min(2, $length);
+            $hidden = $length - $visible;
+
+            return str_repeat('•', $hidden).mb_substr($phone, $length - $visible);
+        }
+
+        $prefix = mb_substr($phone, 0, 4);
+        $suffix = mb_substr($phone, $length - 2);
+        $hidden = $length - 6;
+
+        return $prefix.str_repeat('•', $hidden).$suffix;
+    }
 }

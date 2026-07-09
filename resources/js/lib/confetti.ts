@@ -34,3 +34,48 @@ export function celebrate(): void {
     fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
     fire(0.1, { spread: 120, startVelocity: 45 });
 }
+
+/**
+ * A bigger, sustained finale burst for the Lucky Draw reveal of all winners.
+ * Fires from both bottom corners for a couple of seconds. Same TCL palette and
+ * reduced-motion / small-screen guards as {@link celebrate}.
+ */
+export function celebrateBig(): void {
+    const prefersReduced =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReduced) {
+        return;
+    }
+
+    const isSmall = typeof window !== 'undefined' && window.innerWidth < 640;
+    const duration = isSmall ? 1400 : 2200;
+    const end = Date.now() + duration;
+    const particleCount = isSmall ? 3 : 6;
+
+    const frame = () => {
+        confetti({
+            particleCount,
+            angle: 60,
+            spread: 70,
+            origin: { x: 0, y: 0.7 },
+            colors: TCL_COLORS,
+            disableForReducedMotion: true,
+        });
+        confetti({
+            particleCount,
+            angle: 120,
+            spread: 70,
+            origin: { x: 1, y: 0.7 },
+            colors: TCL_COLORS,
+            disableForReducedMotion: true,
+        });
+
+        if (Date.now() < end) {
+            requestAnimationFrame(frame);
+        }
+    };
+
+    frame();
+}

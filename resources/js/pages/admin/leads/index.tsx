@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { Download, Trophy } from 'lucide-react';
+import { Download, Sparkles, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -36,11 +36,19 @@ export default function Index({ leads }: Props) {
                             {leads.length === 1 ? '' : 's'}
                         </p>
                     </div>
-                    <Button asChild disabled={leads.length === 0}>
-                        <a href="/admin/leads/export">
-                            <Download className="mr-1 size-4" /> Export CSV
-                        </a>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button asChild variant="outline">
+                            <a href="/draw" target="_blank" rel="noopener">
+                                <Sparkles className="mr-1 size-4" /> Open Lucky
+                                Draw
+                            </a>
+                        </Button>
+                        <Button asChild disabled={leads.length === 0}>
+                            <a href="/admin/leads/export">
+                                <Download className="mr-1 size-4" /> Export CSV
+                            </a>
+                        </Button>
+                    </div>
                 </div>
 
                 {leads.length === 0 ? (
